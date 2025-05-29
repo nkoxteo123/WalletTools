@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý các dàn ví Solana (Dark Mode - Mục lục nhanh)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #15191f;
+      --bg-card: #222834;
+      --bg-card-light: #242a3b;
+      --text-main: #f2f5fa;
+      --text-sub: #aeb4c6;
+      --text-title: #86c1ff;
+      --text-accent: #70ffa6;
+      --border-main: #32394a;
+      --primary: #379eff;
+      --danger: #fc6a5d;
+      --success: #35e98e;
+      --input-bg: #232b3d;
+      --input-border: #335075;
+      --input-focus: #379eff;
+      --edit: #ffe981;
+      --edit-hover: #f2ca42;
+      --edit-text: #695100;
+      --balance-btn: #ffc90b;
+      --balance-btn-hover: #ffb000;
+      --balance-btn-text: #4a3400;
+      --highlight: #243c64;
+    }
+    html, body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', Arial, sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      scroll-behavior: smooth;
+    }
+    .main-layout {
+      display: flex;
+      max-width: 1250px;
+      margin: 0 auto;
+      gap: 0;
+    }
+    .sidebar {
+      width: 222px;
+      min-width: 160px;
+      max-width: 270px;
+      background: var(--bg-card-light);
+      padding: 36px 18px 24px 14px;
+      border-radius: 21px 0 0 21px;
+      margin-top: 56px;
+      margin-right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      height: fit-content;
+      box-shadow: 1px 1.5px 18px #18315c17;
+    }
+    .sidebar-title {
+      color: var(--text-title);
+      font-weight: 600;
+      font-size: 1.09rem;
+      margin-bottom: 18px;
+      letter-spacing: 0.02em;
+      padding-left: 2px;
+    }
+    .wallet-list-nav {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      font-size: 1.05rem;
+    }
+    .wallet-list-nav li {
+      margin-bottom: 7px;
+      width: 100%;
+    }
+    .wallet-list-nav button {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      text-align: left;
+      padding: 7px 6px 7px 11px;
+      font-size: 1.03rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.18s, color 0.15s;
+      outline: none;
+      letter-spacing: 0.01em;
+    }
+    .wallet-list-nav button.active,
+    .wallet-list-nav button:focus {
+      background: var(--highlight);
+      color: var(--text-accent);
+    }
+    .wallet-list-nav button:hover {
+      background: #284074;
+      color: #fff;
+    }
+    .container {
+      background: var(--bg-card);
+      border-radius: 0 22px 22px 0;
+      margin: 56px 0 0 0;
+      padding: 48px 52px 36px 52px;
+      box-shadow: 0 4px 22px rgba(0,0,0,0.07);
+      width: 100%;
+      min-width: 330px;
+      min-height: 75vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 7px;
+      gap: 15px;
+    }
+    .check-balance-btn {
+      background: linear-gradient(90deg, var(--balance-btn) 20%, #fff2b0 100%);
+      color: var(--balance-btn-text);
+      font-weight: 700;
+      font-size: 1.05rem;
+      border: none;
+      border-radius: 9px;
+      padding: 11px 25px;
+      cursor: pointer;
+      box-shadow: 0 2px 12px #ffe98144;
+      transition: background 0.18s, transform 0.12s;
+      letter-spacing: 0.02em;
+      outline: none;
+      margin-left: 12px;
+      margin-top: 4px;
+    }
+    .check-balance-btn:hover {
+      background: linear-gradient(90deg, var(--balance-btn-hover) 20%, #ffe375 100%);
+      color: #191000;
+      transform: scale(1.04);
+    }
+    h2 {
+      color: var(--text-title);
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 0 0 18px 0;
+      letter-spacing: 0.01em;
+      text-shadow: 0 4px 30px #0004;
+      flex: 1;
+    }
+    .form-row {
+      display: flex;
+      gap: 36px;
+      margin-bottom: 30px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .form-col {
+      flex: 1;
+      min-width: 160px;
+      max-width: 170px;
+      display: flex;
+      flex-direction: column;
+    }
+    .form-col2 {
+      flex: 1;
+      min-width: 360px;
+      max-width: 490px;
+      display: flex;
+      flex-direction: column;
+    }
+    .form-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      align-items: stretch;
+      min-width: 170px;
+      margin-top: 12px;
+    }
+    label {
+      color: var(--text-sub);
+      font-weight: 600;
+      margin-bottom: 9px;
+      font-size: 1.04rem;
+      letter-spacing: 0.01em;
+      padding-left: 1px;
+    }
+    textarea, input[type=text] {
+      background: var(--input-bg);
+      border: 2px solid var(--input-border);
+      color: var(--text-main);
+      font-size: 1.08rem;
+      padding: 14px 16px;
+      border-radius: 11px;
+      margin-bottom: 9px;
+      outline: none;
+      transition: border 0.22s, background 0.18s;
+      font-family: 'Inter', Arial, sans-serif;
+      box-sizing: border-box;
+      resize: none;
+    }
+    textarea {
+      min-height: 210px;
+      max-height: 290px;
+      resize: vertical;
+    }
+    textarea:focus, input[type=text]:focus {
+      border-color: var(--input-focus);
+      background: #25314b;
+    }
+    .btn {
+      padding: 14px 0;
+      background: linear-gradient(90deg, var(--primary) 20%, #70bfff 100%);
+      color: #fff;
+      font-size: 1.09rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 11px;
+      cursor: pointer;
+      margin-bottom: 0;
+      transition: background 0.22s, box-shadow 0.15s, transform 0.13s;
+      box-shadow: 0 2px 12px #207be230;
+      letter-spacing: 0.04em;
+      outline: none;
+      border-bottom: 2.5px solid #1960b4;
+    }
+    .btn:hover {
+      background: linear-gradient(90deg, #2770d3 20%, #43a2e3 100%);
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 6px 32px #1a3874 0.18;
+    }
+    .btn-secondary {
+      background: linear-gradient(90deg, var(--success) 12%, #5dfcb8 98%);
+      color: #23392c;
+      border-bottom: 2.5px solid #19a762;
+    }
+    .btn-secondary:hover {
+      background: linear-gradient(90deg, var(--success-hover) 12%, #8dfccb 98%);
+    }
+    .btn-danger {
+      background: linear-gradient(90deg, var(--danger) 15%, #ff996a 97%);
+      color: #fff;
+      border-bottom: 2.5px solid #c23d2f;
+    }
+    .btn-danger:hover {
+      background: linear-gradient(90deg, var(--danger-hover) 15%, #ffb090 97%);
+    }
+    .btn-upload {
+      background: #37314c;
+      color: #ffb060;
+      border: 2px solid #6b4d16;
+      margin-top: 0;
+      font-weight: 700;
+      border-radius: 11px;
+      font-size: 1.01rem;
+    }
+    .btn-upload:hover {
+      background: #5d4973;
+      color: #fff;
+      border-color: #bda72f;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 0 8px 0;
+      gap: 14px;
+    }
+    .section-header .btn {
+      flex: none;
+      padding: 9px 25px;
+      font-size: 1.07rem;
+      margin-bottom: 0;
+      margin-right: 0;
+    }
+    .wallet-title {
+      font-weight: 700;
+      color: var(--text-title);
+      font-size: 1.16rem;
+      margin-bottom: 6px;
+      margin-top: 27px;
+      text-shadow: 0 1.5px 12px #2a54a760;
+      letter-spacing: 0.03em;
+    }
+    .wallet-actions {
+      margin-bottom: 8px;
+      margin-left: 2px;
+    }
+    .wallet-actions button {
+      margin-right: 13px;
+      border: none;
+      background: var(--bg-card-light);
+      cursor: pointer;
+      color: var(--primary);
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 7px;
+      padding: 6px 19px;
+      margin-bottom: 4px;
+      transition: background 0.14s, color 0.19s;
+      outline: none;
+    }
+    .wallet-actions button:last-child { margin-right: 0; }
+    .wallet-actions button:hover { 
+      color: var(--danger); 
+      background: #2a212e;
+      box-shadow: 0 3px 16px #240c3c40;
+    }
+    .wallet-actions .copy-btn {
+      color: var(--success);
+      background: #1c252d;
+    }
+    .wallet-actions .copy-btn:hover { color: #16c065; background: #21343a;}
+    .wallet-actions .delete-btn {
+      color: var(--danger);
+      background: #2d2027;
+    }
+    .wallet-actions .delete-btn:hover { color: #ff6c4e; background: #402126;}
+    .wallet-actions .edit-btn {
+      color: #695100;
+      background: var(--edit);
+      font-weight: 700;
+    }
+    .wallet-actions .edit-btn:hover {
+      background: var(--edit-hover);
+      color: #1d1700;
+    }
+    .wallet-details {
+      background: #151c28;
+      margin: 9px 0 11px 0;
+      padding: 14px 13px;
+      border-radius: 11px;
+      font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 1.07rem;
+      color: #8cc1ff;
+      white-space: pre-line;
+      word-break: break-all;
+      box-shadow: 0 2px 18px #2a418044;
+      position: relative;
+      border: 1.5px solid #283655;
+      min-height: 30px;
+      transition: background 0.27s, box-shadow 0.25s;
+    }
+    .wallet-details.highlight {
+      background: #2b426f !important;
+      box-shadow: 0 0 0 4px #3194f6a9;
+      animation: highlightfade 2.3s;
+    }
+    @keyframes highlightfade {
+      0% {background: #ffe981; color: #2c2d2f;}
+      10% {background: #ffe981; color: #2c2d2f;}
+      70% {background: #2b426f;}
+      100% {background: #151c28;}
+    }
+    #copied-alert {
+      display: none;
+      position: fixed;
+      right: 46px;
+      top: 32px;
+      background: var(--success);
+      color: #12261f;
+      font-size: 1.14rem;
+      font-weight: 700;
+      padding: 11px 31px 12px 31px;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px #35e98e44;
+      z-index: 99;
+      animation: fadeInOut 1.5s;
+      letter-spacing: 0.06em;
+    }
+    @keyframes fadeInOut {
+      0% {opacity: 0;}
+      15% {opacity: 1;}
+      80% {opacity: 1;}
+      100% {opacity: 0;}
+    }
+    #totalSets {
+      color: var(--text-sub);
+      font-size: 1.06rem;
+      margin-right: 6px;
+    }
+    @media (max-width: 1060px) {
+      .main-layout {flex-direction: column;}
+      .sidebar {width: 100%; max-width: none; border-radius: 22px 22px 0 0; margin: 0 0 0 0; box-shadow: none; flex-direction: row; padding: 19px 3vw 9px 2vw;}
+      .sidebar-title {margin-bottom: 0; min-width: 88px;}
+      .wallet-list-nav {display: flex; flex-wrap: wrap; gap: 0 9px;}
+      .wallet-list-nav li {margin-bottom: 0;}
+      .container {border-radius: 0 0 22px 22px; margin-top: 0; padding-top: 28px;}
+    }
+    @media (max-width: 700px) {
+      .container {padding: 2vw 2vw 12px 2vw;}
+      .form-row { flex-direction: column; gap: 11px;}
+      .form-col {max-width: unset;}
+      .form-btns {flex-direction: row; gap: 8px; margin-top: 0;}
+      #copied-alert {right: 6vw; top: 15px;}
+    }
+    @media (max-width: 470px) {
+      .form-btns {flex-direction: column; gap: 9px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="main-layout">
+    <nav class="sidebar" id="sidebar-nav">
+      <div class="sidebar-title">📋 Danh sách bộ ví</div>
+      <ul class="wallet-list-nav" id="walletListNav"></ul>
+    </nav>
+    <div class="container">
+      <div class="header-bar">
+        <h2>Quản lý các dàn ví Solana</h2>
+        <button class="check-balance-btn" onclick="window.open('https://ct.app/batchCheckBalance/sol','_blank')">
+          🪙 Check Sol Balance
+        </button>
+      </div>
+      <div class="form-row">
+        <div class="form-col">
+          <label for="walletSetName">Tên bộ ví:</label>
+          <input type="text" id="walletSetName" placeholder="Nhập tên bộ ví..." autocomplete="off"/>
+        </div>
+        <div class="form-col2">
+          <label for="walletSet">Danh sách ví (mỗi ví 1 dòng):</label>
+          <textarea id="walletSet" placeholder="Dán các ví ở đây..."></textarea>
+        </div>
+        <div class="form-btns">
+          <button class="btn" id="saveBtn">Lưu bộ ví</button>
+          <button class="btn btn-secondary" id="copyAllBtn">Copy tất cả ví</button>
+          <button class="btn btn-secondary" id="exportBtn">Xuất file</button>
+          <label for="importFile" style="margin-bottom:0;">
+            <input type="file" id="importFile" accept=".json" style="display:none;">
+            <span class="btn btn-upload" id="importLabel">Nhập file</span>
+          </label>
+        </div>
+      </div>
+      <div class="section-header">
+        <div style="font-weight:700;font-size:1.18rem;color:var(--text-title);letter-spacing:0.04em;">
+          Tất cả bộ ví đã lưu
+        </div>
+        <div id="totalSets"></div>
+      </div>
+      <div id="walletSets"></div>
+      <div id="copied-alert">Đã copy!</div>
+    </div>
+  </div>
+  <script>
+    const STORAGE_KEY = 'walletSetsSolanaDarkEdit';
+    function loadWalletSets() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    }
+    function saveWalletSets(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+    function updateTotalSets() {
+      const walletSets = loadWalletSets();
+      const total = Object.keys(walletSets).length;
+      let totalWallets = 0;
+      Object.values(walletSets).forEach(arr => totalWallets += arr.length);
+      document.getElementById('totalSets').textContent =
+        total === 0 ? '' : `${total} bộ - ${totalWallets} ví`;
+    }
+    function showCopiedAlert() {
+      const alert = document.getElementById('copied-alert');
+      alert.style.display = 'block';
+      alert.style.animation = 'fadeInOut 1.5s';
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 1500);
+    }
+    function escapeHtml(unsafe) {
+      return unsafe.replace(/[<>&"']/g, function(m) {
+        switch(m) {
+          case '<': return '&lt;';
+          case '>': return '&gt;';
+          case '&': return '&amp;';
+          case '"': return '&quot;';
+          case "'": return '&#39;';
+        }
+      });
+    }
+    function renderWalletSets(scrollToId = null) {
+      const walletSets = loadWalletSets();
+      updateTotalSets();
+      const container = document.getElementById('walletSets');
+      container.innerHTML = '';
+      const names = Object.keys(walletSets);
+      if (names.length === 0) {
+        container.innerHTML = '<div style="color:#888;text-align:center;padding:21px 0 12px 0;font-size:1.07rem;">Chưa có bộ ví nào được lưu.</div>';
+        document.getElementById('walletListNav').innerHTML = '';
+        return;
+      }
+      // Render danh sách bên trái
+      renderWalletNavList(names);
+
+      names.forEach(name => {
+        const wallets = walletSets[name];
+        const safeId = "wallet-set-"+btoa(unescape(encodeURIComponent(name))).replace(/=/g,'');
+        const div = document.createElement('div');
+        div.id = safeId;
+        div.style.marginBottom = '18px';
+        // Tiêu đề bộ ví
+        const title = document.createElement('div');
+        title.className = 'wallet-title';
+        title.innerHTML = escapeHtml(name) + ` <span style="font-size:1.01rem;color:#4a789a;">(${wallets.length} ví)</span>`;
+        div.appendChild(title);
+        // Nút copy + edit + xóa
+        const actions = document.createElement('div');
+        actions.className = 'wallet-actions';
+        // Copy
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy';
+        copyBtn.className = 'copy-btn';
+        copyBtn.onclick = function() {
+          navigator.clipboard.writeText(wallets.join('\n')).then(() => showCopiedAlert());
+        };
+        // Edit
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.className = 'edit-btn';
+        editBtn.onclick = function() {
+          document.getElementById('walletSetName').value = name;
+          document.getElementById('walletSet').value = wallets.join('\n');
+          document.getElementById('walletSetName').focus();
+        };
+        // Xóa
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Xóa';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.onclick = function() {
+          if (confirm('Bạn chắc chắn muốn xóa bộ ví "' + name + '"?')) {
+            delete walletSets[name];
+            saveWalletSets(walletSets);
+            renderWalletSets();
+          }
+        };
+        actions.appendChild(copyBtn);
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+        div.appendChild(actions);
+        // Danh sách ví
+        const walletDetail = document.createElement('div');
+        walletDetail.className = 'wallet-details';
+        walletDetail.innerHTML = wallets.map(w => escapeHtml(w)).join('<br>');
+        div.appendChild(walletDetail);
+        container.appendChild(div);
+
+        // Nếu được yêu cầu scroll tới bộ này
+        if(scrollToId === safeId) {
+          setTimeout(() => {
+            const el = document.getElementById(safeId);
+            if(el) {
+              el.scrollIntoView({behavior:'smooth',block:'start'});
+              const walletDetails = el.querySelector('.wallet-details');
+              if(walletDetails) {
+                walletDetails.classList.add('highlight');
+                setTimeout(()=>walletDetails.classList.remove('highlight'), 2200);
+              }
+            }
+          }, 60);
+        }
+      });
+    }
+
+    // Render danh sách các bộ ví ở nav
+    function renderWalletNavList(names) {
+      const nav = document.getElementById('walletListNav');
+      nav.innerHTML = '';
+      names.forEach(name => {
+        const safeId = "wallet-set-"+btoa(unescape(encodeURIComponent(name))).replace(/=/g,'');
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.textContent = name;
+        btn.onclick = function() {
+          // scroll tới bộ ví này và highlight
+          renderWalletSets(safeId);
+          setActiveNavButton(btn);
+        };
+        li.appendChild(btn);
+        nav.appendChild(li);
+      });
+    }
+    function setActiveNavButton(btn) {
+      const buttons = document.querySelectorAll('.wallet-list-nav button');
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Lưu bộ ví mới
+    document.getElementById('saveBtn').onclick = function() {
+      const name = document.getElementById('walletSetName').value.trim();
+      const wallets = document.getElementById('walletSet').value.trim().split('\n').filter(x => x.trim() !== '');
+      if (!name) {
+        alert('Bạn chưa nhập tên bộ ví!');
+        return;
+      }
+      if (wallets.length === 0) {
+        alert('Bạn chưa nhập danh sách ví!');
+        return;
+      }
+      const walletSets = loadWalletSets();
+      if (walletSets[name]) {
+        if (!confirm('Tên bộ ví này đã tồn tại. Bạn có muốn ghi đè lên không?')) return;
+      }
+      walletSets[name] = wallets;
+      saveWalletSets(walletSets);
+      // reset
+      document.getElementById('walletSetName').value = '';
+      document.getElementById('walletSet').value = '';
+      renderWalletSets();
+    };
+    // Copy tất cả ví của mọi bộ
+    document.getElementById('copyAllBtn').onclick = function() {
+      const walletSets = loadWalletSets();
+      let allWallets = [];
+      Object.values(walletSets).forEach(arr => allWallets = allWallets.concat(arr));
+      if(allWallets.length === 0) {
+        alert('Chưa có ví để copy!');
+        return;
+      }
+      navigator.clipboard.writeText(allWallets.join('\n')).then(() => showCopiedAlert());
+    }
+    // Xuất file JSON
+    document.getElementById('exportBtn').onclick = function() {
+      const walletSets = loadWalletSets();
+      if(Object.keys(walletSets).length === 0) {
+        alert('Không có bộ ví nào để xuất!');
+        return;
+      }
+      const blob = new Blob([JSON.stringify(walletSets, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'dan-vi-solana.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    // Nhập file JSON
+    document.getElementById('importLabel').onclick = function() {
+      document.getElementById('importFile').click();
+    }
+    document.getElementById('importFile').onchange = function(e) {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const json = JSON.parse(ev.target.result);
+          if(typeof json !== 'object' || Array.isArray(json)) throw 0;
+          // Kiểm tra hợp lệ
+          for(const k in json) {
+            if(!Array.isArray(json[k]) || !json[k].every(x=>typeof x==='string')) throw 0;
+          }
+          if(!confirm('Nhập dữ liệu này sẽ ghi đè lên các bộ ví hiện tại. Tiếp tục?')) return;
+          saveWalletSets(json);
+          renderWalletSets();
+          alert('Đã nhập dữ liệu thành công!');
+        } catch {
+          alert('File không hợp lệ!');
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    };
+    // Khởi động
+    renderWalletSets();
+  </script>
+</body>
+</html>
