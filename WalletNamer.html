@@ -80,10 +80,22 @@
       background: linear-gradient(90deg,#2e6fd4 0%,#49a7db 100%);
       box-shadow: 0 4px 18px rgba(52,123,255,0.13);
     }
+    #reverse {
+      background: linear-gradient(90deg,#f06449 20%,#ffc067 100%);
+    }
+    #reverse:hover {
+      background: linear-gradient(90deg,#e8533d 0%,#eeb145 100%);
+    }
+    .output-row {
+      display: flex;
+      align-items: center;
+      margin-top: 24px;
+      margin-bottom: 0;
+      gap: 8px;
+    }
     #output {
       background: #f1f6fb;
       border-radius: 9px;
-      margin-top: 24px;
       padding: 16px 12px;
       font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
       font-size: 1rem;
@@ -92,6 +104,50 @@
       box-shadow: 0 1px 4px rgba(70,124,255,0.03);
       white-space: pre-line;
       word-break: break-all;
+      flex: 1;
+      margin: 0;
+    }
+    #copy {
+      flex: none;
+      padding: 8px 20px;
+      font-size: 0.97rem;
+      border-radius: 7px;
+      background: linear-gradient(90deg,#51c05e 10%,#81e887 90%);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-left: 4px;
+      box-shadow: 0 1.5px 6px rgba(80,200,100,0.08);
+    }
+    #copy:hover {
+      background: linear-gradient(90deg,#34b53a 10%,#65c873 100%);
+    }
+    #copied-alert {
+      display: none;
+      position: absolute;
+      right: 25px;
+      top: -33px;
+      background: #38d474;
+      color: #fff;
+      font-size: 0.98rem;
+      padding: 5px 16px 6px 16px;
+      border-radius: 9px;
+      box-shadow: 0 2px 8px rgba(56,212,116,0.17);
+      z-index: 99;
+      animation: fadeInOut 1.5s;
+    }
+    .output-wrapper {
+      position: relative;
+      width: 100%;
+      margin-bottom: 0;
+    }
+    @keyframes fadeInOut {
+      0% {opacity: 0;}
+      20% {opacity: 1;}
+      80% {opacity: 1;}
+      100% {opacity: 0;}
     }
     @media (max-width: 480px) {
       .container {
@@ -102,6 +158,10 @@
       h2 { font-size: 1.08rem; }
       .btn-row { flex-direction: column; gap: 8px;}
       button { width: 100%; }
+      .output-row { flex-direction: column; align-items: stretch; gap: 7px;}
+      #copy { width: 100%; }
+      .output-wrapper { margin-top: 10px; }
+      #copied-alert { right: 0; left: 0; text-align: center; }
     }
   </style>
 </head>
@@ -114,9 +174,15 @@
     <input type="text" id="label" placeholder="Nhập nhãn..." />
     <div class="btn-row">
       <button id="generate">Tạo</button>
-      <button id="reverse" style="background: linear-gradient(90deg,#f06449 20%,#ffc067 100%);">Đảo ngược</button>
+      <button id="reverse">Đảo ngược</button>
     </div>
-    <div id="output"></div>
+    <div class="output-wrapper">
+      <div class="output-row">
+        <div id="output"></div>
+        <button id="copy">Copy</button>
+      </div>
+      <div id="copied-alert">Đã copy!</div>
+    </div>
   </div>
   <script>
     document.getElementById('generate').onclick = function() {
@@ -144,6 +210,20 @@
         }
       });
       document.getElementById('output').textContent = result || "Không có dòng hợp lệ!";
+    }
+
+    document.getElementById('copy').onclick = function() {
+      const output = document.getElementById('output').textContent;
+      if (output && output !== "Không có dữ liệu hợp lệ!" && output !== "Không có dòng hợp lệ!") {
+        navigator.clipboard.writeText(output).then(() => {
+          const alert = document.getElementById('copied-alert');
+          alert.style.display = 'block';
+          alert.style.animation = 'fadeInOut 1.5s';
+          setTimeout(() => {
+            alert.style.display = 'none';
+          }, 1500);
+        });
+      }
     }
   </script>
 </body>
