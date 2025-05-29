@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Solscan Wallet Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; background: #181a20; margin: 0; color: #e0e0e0; }
+    .container { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 250px; background: #15161b; color: #fafafa; padding: 20px 0; display: flex; flex-direction: column; border-right:1.5px solid #23252d;
+    }
+    .wallet-list { flex: 1; }
+    .wallet-item {
+      padding: 10px 20px; cursor: pointer;
+      border-left: 4px solid transparent;
+      transition: background 0.1s, border 0.1s;
+      background: none;
+    }
+    .wallet-item.active { background: #23252d; border-left: 4px solid #38bdf8; }
+    .wallet-item:hover { background: #23252d; }
+    .add-wallet-btn, .add-filter-btn, .add-link-btn, .btn-export, .btn-import {
+      margin: 10px 20px 0 20px; padding: 8px 0;
+      background: #38bdf8; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px;
+      width: calc(100% - 40px);
+      box-shadow: 0 2px 8px #0001;
+    }
+    .main { flex: 1; padding: 40px 30px; background: #181a20; }
+    .title { font-size: 22px; margin-bottom: 10px; font-weight: bold; color: #38bdf8;}
+    .wallet-actions { float: right; }
+    .wallet-actions button {
+      background: none; border: none; color: #606f99; cursor: pointer; margin-left: 4px; font-size: 18px;
+    }
+    .filter-list { margin-top: 16px; }
+    .filter-item {
+      background: #23252d; border-radius: 10px; margin-bottom: 16px; padding: 14px 16px; box-shadow: 0 2px 8px #0002;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .filter-actions { display: flex; gap: 10px; }
+    .filter-actions button {
+      padding: 5px 15px; border-radius: 6px; border: none; cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-open { background: #38bdf8; color: #fff;}
+    .btn-edit { background: #facc15; color: #23252d;}
+    .btn-del { background: #ef4444; color: #fff;}
+    .input-row { margin-bottom: 10px; }
+    .input-row label { display: block; font-size: 14px; color: #8ea2d8; margin-bottom: 2px;}
+    .input-row input, .input-row select {
+      padding: 6px 10px; border-radius: 6px; border: 1px solid #42445a; background: #191a22; color: #e0e0e0; width: 100%; font-size: 15px;
+    }
+    .input-row input[type="checkbox"] { width: auto; }
+    .form-btns { display: flex; gap: 10px; margin-top: 8px; }
+    .form-btns button {
+      padding: 7px 20px; border: none; border-radius: 6px; font-size: 15px; cursor: pointer;
+    }
+    .btn-save { background: #22c55e; color: #fff;}
+    .btn-cancel { background: #606f99; color: #fff;}
+    .btn-linkadd { background: #a3e635; color: #23252d; }
+    .filter-pagination { margin-top: 8px; display: flex; align-items: center; gap: 12px; color: #a5b4fc; font-size: 15px;}
+    .filter-pagination button {
+      background: #23252d; color: #38bdf8; border: 1px solid #384259; border-radius: 5px; padding: 4px 12px; cursor: pointer;
+    }
+    .filter-pagination button:disabled { color: #64748b; border-color: #23252d; cursor: not-allowed;}
+    .export-import-group { margin: 0 20px 10px 20px; display: flex; gap: 8px; }
+    .btn-export { background: #4ade80;}
+    .btn-import { background: #818cf8;}
+    @media (max-width: 800px) {
+      .container { flex-direction: column;}
+      .sidebar { width: 100%; flex-direction: row; overflow-x: auto;}
+      .wallet-item { display: inline-block; width: auto; }
+      .main { padding: 15px;}
+    }
+    ::selection { background:#38bdf8; color:#181a20; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="sidebar">
+    <div class="export-import-group">
+      <button class="btn-export" onclick="exportData()">Xuất</button>
+      <button class="btn-import" onclick="document.getElementById('importInput').click()">Nhập</button>
+      <input id="importInput" type="file" style="display:none;" accept="application/json" onchange="importData(event)">
+    </div>
+    <div class="wallet-list" id="walletList"></div>
+    <button class="add-wallet-btn" onclick="showWalletForm()">+ Thêm ví mới</button>
+    <button class="add-link-btn" onclick="showLinkForm()">+ Thêm từ link Solscan</button>
+  </div>
+  <div class="main">
+    <div id="mainContent"></div>
+  </div>
+</div>
+
+<!-- Modal thêm/sửa ví -->
+<div id="walletFormModal" style="display:none; position:fixed; top:0; left:0;right:0;bottom:0; background:#0007;z-index:10;align-items:center;justify-content:center;">
+  <div style="background:#23252d;padding:30px 30px 22px 30px;border-radius:10px;min-width:320px;max-width:90vw; color:#fafafa;">
+    <div style="font-size:18px;margin-bottom:18px;" id="walletFormTitle">Thêm ví</div>
+    <div class="input-row">
+      <label>Tên ví</label>
+      <input type="text" id="walletNameInput" maxlength="40">
+    </div>
+    <div class="input-row">
+      <label>Địa chỉ ví</label>
+      <input type="text" id="walletAddrInput" maxlength="60">
+    </div>
+    <div class="form-btns">
+      <button class="btn-save" onclick="saveWallet()">Lưu</button>
+      <button class="btn-cancel" onclick="hideWalletForm()">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal thêm/sửa filter -->
+<div id="filterFormModal" style="display:none; position:fixed; top:0; left:0;right:0;bottom:0; background:#0007;z-index:10;align-items:center;justify-content:center;">
+  <div style="background:#23252d;padding:30px 30px 22px 30px;border-radius:10px;min-width:320px;max-width:90vw; color:#fafafa;">
+    <div style="font-size:18px;margin-bottom:18px;" id="filterFormTitle">Thêm bộ lọc</div>
+    <div class="input-row">
+      <label>Tên bộ lọc</label>
+      <input type="text" id="filterNameInput" maxlength="40">
+    </div>
+    <div class="input-row">
+      <label>amount (phân tách dấu phẩy, ví dụ: 1,10)</label>
+      <input type="text" id="filterAmountInput" placeholder="1,10">
+    </div>
+    <div class="input-row">
+      <label>value (phân tách dấu phẩy, có thể bỏ qua)</label>
+      <input type="text" id="filterValueInput" placeholder="100,1000">
+    </div>
+    <div class="input-row">
+      <label>flow</label>
+      <select id="filterFlowInput">
+        <option value="out">out</option>
+        <option value="in">in</option>
+        <option value="">---</option>
+      </select>
+    </div>
+    <div class="input-row">
+      <label>exclude_amount_zero</label>
+      <select id="filterExZeroInput">
+        <option value="false">false</option>
+        <option value="true">true</option>
+      </select>
+    </div>
+    <div class="input-row">
+      <label>remove_spam</label>
+      <select id="filterRemoveSpamInput">
+        <option value="false">false</option>
+        <option value="true">true</option>
+      </select>
+    </div>
+    <div class="input-row">
+      <label>token_address (wSOL mặc định)</label>
+      <input type="text" id="filterTokenAddrInput" value="So11111111111111111111111111111111111111111">
+    </div>
+    <div class="form-btns">
+      <button class="btn-save" onclick="saveFilter()">Lưu</button>
+      <button class="btn-cancel" onclick="hideFilterForm()">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal thêm từ link -->
+<div id="linkFormModal" style="display:none; position:fixed; top:0; left:0;right:0;bottom:0; background:#0007;z-index:11;align-items:center;justify-content:center;">
+  <div style="background:#23252d;padding:30px 30px 22px 30px;border-radius:10px;min-width:320px;max-width:90vw; color:#fafafa;">
+    <div style="font-size:18px;margin-bottom:18px;">Thêm filter từ link Solscan</div>
+    <div class="input-row">
+      <label>Link Solscan</label>
+      <input type="text" id="solscanLinkInput" placeholder="Dán link vào đây..." style="min-width:300px;">
+    </div>
+    <div class="form-btns">
+      <button class="btn-linkadd" onclick="saveLink()">Thêm</button>
+      <button class="btn-cancel" onclick="hideLinkForm()">Hủy</button>
+    </div>
+    <div id="linkAddStatus" style="color:#f87171; margin-top:7px;"></div>
+  </div>
+</div>
+
+<script>
+/* === DATA PERSISTENCE === */
+function getData() {
+  return JSON.parse(localStorage.getItem('solscan_wallets_v2') || '[]');
+}
+function saveData(d) {
+  localStorage.setItem('solscan_wallets_v2', JSON.stringify(d));
+}
+let wallets = getData();
+let currentWallet = 0;
+let editingWallet = null;
+let editingFilter = null;
+
+/* === PAGINATION === */
+let filterPage = 0;
+const FILTERS_PER_PAGE = 100;
+
+if(wallets.length === 0) {
+  wallets = [{
+    name: 'Ví Demo',
+    address: 'AC5RDfQFmDS1deWZos921JfqscXdByf8BKHs5ACWjtW2',
+    filters: [{
+      name: 'Lọc 1-10 wSOL',
+      amount: [1,10],
+      value: [],
+      flow: 'out',
+      exclude_amount_zero: false,
+      remove_spam: false,
+      token_address: 'So11111111111111111111111111111111111111111'
+    }]
+  }];
+}
+renderWalletList(); renderMain();
+
+function renderWalletList() {
+  let html = '';
+  wallets.forEach((w,i) => {
+    html += `<div class="wallet-item${i===currentWallet?' active':''}" onclick="switchWallet(${i})">
+      <span>${w.name||'Chưa đặt tên'}</span>
+      <span class="wallet-actions">
+        <button title="Sửa" onclick="event.stopPropagation();editWallet(${i})">✏️</button>
+        <button title="Xóa" onclick="event.stopPropagation();delWallet(${i})">🗑️</button>
+      </span>
+    </div>`;
+  });
+  document.getElementById('walletList').innerHTML = html;
+}
+
+function renderMain() {
+  if(wallets.length===0){
+    document.getElementById('mainContent').innerHTML = `<div style="color:#64748b;font-size:20px">Hãy thêm một ví mới!</div>`;
+    return;
+  }
+  let w = wallets[currentWallet];
+  let filters = w.filters || [];
+  let totalPages = Math.ceil(filters.length / FILTERS_PER_PAGE);
+  if(filterPage >= totalPages) filterPage = totalPages-1;
+  if(filterPage < 0) filterPage = 0;
+  let startIdx = filterPage * FILTERS_PER_PAGE;
+  let endIdx = startIdx + FILTERS_PER_PAGE;
+  let html = `<div class="title">${w.name||'Chưa đặt tên'} 
+      <span style="font-size:14px;color:#a5b4fc;">(${w.address})</span>
+    </div>
+    <button class="add-filter-btn" onclick="showFilterForm()">+ Thêm bộ lọc</button>
+    <div class="filter-pagination">
+      <button onclick="prevFilterPage()" ${filterPage==0?"disabled":""}>Prev</button>
+      Trang ${totalPages === 0 ? 0 : (filterPage+1)} / ${totalPages}
+      <button onclick="nextFilterPage()" ${filterPage>=totalPages-1?"disabled":""}>Next</button>
+      <span>Hiện 100 filter/trang</span>
+    </div>
+    <div class="filter-list">`;
+  filters.slice(startIdx, endIdx).forEach((f,j)=>{
+    let realIdx = startIdx + j;
+    html += `<div class="filter-item">
+      <div><b>${f.name||'Chưa đặt tên'}</b></div>
+      <div>amount: <span style="color:#38bdf8">${(f.amount||[]).join(', ')||'-'}</span>
+        | value: <span style="color:#38bdf8">${(f.value||[]).join(', ')||'-'}</span>
+        | flow: <span style="color:#38bdf8">${f.flow||'-'}</span>
+      </div>
+      <div>exclude_amount_zero: <span style="color:#38bdf8">${f.exclude_amount_zero}</span>
+        | remove_spam: <span style="color:#38bdf8">${f.remove_spam}</span>
+        | token: <span style="color:#38bdf8">${f.token_address||'-'}</span>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-open" onclick="openSolscan(${currentWallet},${realIdx})">Mở Solscan</button>
+        <button class="btn-edit" onclick="editFilter(${realIdx})">Sửa</button>
+        <button class="btn-del" onclick="delFilter(${realIdx})">Xóa</button>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+function nextFilterPage() {
+  filterPage++; renderMain();
+}
+function prevFilterPage() {
+  filterPage--; renderMain();
+}
+
+/* ==== WALLET CRUD ==== */
+function showWalletForm(edit=false) {
+  editingWallet = edit!==false ? edit : null;
+  document.getElementById('walletFormTitle').innerText = editingWallet!==null ? 'Sửa ví' : 'Thêm ví';
+  document.getElementById('walletNameInput').value = editingWallet!==null ? wallets[editingWallet].name : '';
+  document.getElementById('walletAddrInput').value = editingWallet!==null ? wallets[editingWallet].address : '';
+  document.getElementById('walletFormModal').style.display='flex';
+}
+function hideWalletForm() {
+  document.getElementById('walletFormModal').style.display='none';
+}
+function saveWallet() {
+  let name = document.getElementById('walletNameInput').value.trim();
+  let address = document.getElementById('walletAddrInput').value.trim();
+  if(address.length < 20) { alert('Địa chỉ ví không hợp lệ!'); return; }
+  if(editingWallet!==null){
+    wallets[editingWallet].name = name;
+    wallets[editingWallet].address = address;
+  } else {
+    wallets.push({name,address,filters:[]});
+    currentWallet = wallets.length-1;
+    filterPage = 0;
+  }
+  saveData(wallets); renderWalletList(); renderMain(); hideWalletForm();
+}
+function editWallet(idx){
+  showWalletForm(idx);
+}
+function delWallet(idx){
+  if(confirm('Bạn chắc chắn xóa ví này?')){
+    wallets.splice(idx,1);
+    if(currentWallet >= wallets.length) currentWallet = wallets.length-1;
+    filterPage = 0;
+    saveData(wallets); renderWalletList(); renderMain();
+  }
+}
+function switchWallet(idx){
+  currentWallet = idx;
+  filterPage = 0;
+  renderWalletList();
+  renderMain();
+}
+
+/* ==== FILTER CRUD ==== */
+function showFilterForm(edit=false){
+  editingFilter = edit!==false ? edit : null;
+  let filter = editingFilter!==null ? wallets[currentWallet].filters[editingFilter] : {};
+  document.getElementById('filterFormTitle').innerText = editingFilter!==null ? 'Sửa bộ lọc' : 'Thêm bộ lọc';
+  document.getElementById('filterNameInput').value = filter.name||'';
+  document.getElementById('filterAmountInput').value = (filter.amount||[]).join(',');
+  document.getElementById('filterValueInput').value = (filter.value||[]).join(',');
+  document.getElementById('filterFlowInput').value = filter.flow||'out';
+  document.getElementById('filterExZeroInput').value = filter.exclude_amount_zero===true ? 'true':'false';
+  document.getElementById('filterRemoveSpamInput').value = filter.remove_spam===true ? 'true':'false';
+  document.getElementById('filterTokenAddrInput').value = filter.token_address||'So11111111111111111111111111111111111111111';
+  document.getElementById('filterFormModal').style.display='flex';
+}
+function hideFilterForm(){
+  document.getElementById('filterFormModal').style.display='none';
+}
+function saveFilter(){
+  let name = document.getElementById('filterNameInput').value.trim();
+  let amount = document.getElementById('filterAmountInput').value.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
+  let value = document.getElementById('filterValueInput').value.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
+  let flow = document.getElementById('filterFlowInput').value;
+  let exclude_amount_zero = document.getElementById('filterExZeroInput').value === 'true';
+  let remove_spam = document.getElementById('filterRemoveSpamInput').value === 'true';
+  let token_address = document.getElementById('filterTokenAddrInput').value.trim();
+  if(!name) { alert('Bạn phải đặt tên cho bộ lọc!'); return; }
+  let filterObj = {name,amount,value,flow,exclude_amount_zero,remove_spam,token_address};
+  if(editingFilter!==null){
+    wallets[currentWallet].filters[editingFilter]=filterObj;
+  } else {
+    wallets[currentWallet].filters.push(filterObj);
+  }
+  saveData(wallets); renderMain(); hideFilterForm();
+}
+function editFilter(idx){
+  showFilterForm(idx);
+}
+function delFilter(idx){
+  if(confirm('Xóa bộ lọc này?')){
+    wallets[currentWallet].filters.splice(idx,1);
+    saveData(wallets); renderMain();
+  }
+}
+function openSolscan(walletIdx,filterIdx){
+  let w = wallets[walletIdx], f = w.filters[filterIdx];
+  let url = `https://solscan.io/account/${w.address}?`;
+  url += `exclude_amount_zero=${f.exclude_amount_zero}&remove_spam=${f.remove_spam}`;
+  if(f.flow) url += `&flow=${f.flow}`;
+  (f.amount||[]).forEach(a=>{ url += `&amount=${a}`; });
+  (f.value||[]).forEach(v=>{ url += `&value=${v}`; });
+  if(f.token_address) url += `&token_address=${f.token_address}`;
+  url += `#transfers`;
+  window.open(url, '_blank');
+}
+
+/* ==== THÊM TỪ LINK ==== */
+function showLinkForm(){
+  document.getElementById('solscanLinkInput').value = "";
+  document.getElementById('linkAddStatus').innerText = "";
+  document.getElementById('linkFormModal').style.display='flex';
+}
+function hideLinkForm(){
+  document.getElementById('linkFormModal').style.display='none';
+}
+function saveLink(){
+  let link = document.getElementById('solscanLinkInput').value.trim();
+  let status = document.getElementById('linkAddStatus');
+  // Parse Solscan link
+  let m = link.match(/account\/([A-Za-z0-9]+)/);
+  if(!m) { status.innerText = "Không nhận diện được địa chỉ ví!"; return;}
+  let address = m[1];
+  // Lấy query
+  let q = {};
+  let qstr = link.split('?')[1]||'';
+  let hashIdx = qstr.indexOf('#');
+  if(hashIdx>=0) qstr = qstr.substring(0,hashIdx);
+  qstr.split('&').forEach(pair=>{
+    let [k,v] = pair.split('=');
+    if(k) {
+      if(q[k]) {
+        if(Array.isArray(q[k])) q[k].push(v);
+        else q[k] = [q[k],v];
+      } else q[k] = v;
+    }
+  });
+  // amount, value là mảng
+  let amount = [];
+  if(q.amount) amount = Array.isArray(q.amount) ? q.amount.map(Number) : [Number(q.amount)];
+  amount = amount.filter(v=>!isNaN(v));
+  let value = [];
+  if(q.value) value = Array.isArray(q.value) ? q.value.map(Number) : [Number(q.value)];
+  value = value.filter(v=>!isNaN(v));
+  let filter = {
+    name: 'Auto từ link ' + new Date().toLocaleString(),
+    amount,
+    value,
+    flow: q.flow || 'out',
+    exclude_amount_zero: (q.exclude_amount_zero === 'true') ? true : false,
+    remove_spam: (q.remove_spam === 'true') ? true : false,
+    token_address: q.token_address || 'So11111111111111111111111111111111111111111'
+  };
+  // Tìm xem ví đã có chưa
+  let idx = wallets.findIndex(w=>w.address === address);
+  if(idx >=0){
+    // Thêm vào tab ví đó
+    wallets[idx].filters.push(filter);
+    currentWallet = idx;
+    filterPage = Math.floor(wallets[idx].filters.length / FILTERS_PER_PAGE);
+    status.style.color = "#22c55e";
+    status.innerText = "Đã thêm vào ví có sẵn!";
+    saveData(wallets); renderWalletList(); renderMain();
+    setTimeout(hideLinkForm,800);
+  } else {
+    // Yêu cầu nhập tên ví
+    let ten = prompt("Chưa có ví này. Nhập tên ví mới:");
+    if(ten && ten.trim().length>0){
+      wallets.push({name:ten.trim(),address,filters:[filter]});
+      currentWallet = wallets.length-1;
+      filterPage = 0;
+      status.style.color = "#22c55e";
+      status.innerText = "Đã tạo ví mới và thêm filter!";
+      saveData(wallets); renderWalletList(); renderMain();
+      setTimeout(hideLinkForm,800);
+    } else {
+      status.style.color = "#f87171";
+      status.innerText = "Bạn chưa nhập tên ví, không thể thêm!";
+    }
+  }
+}
+
+/* ==== EXPORT / IMPORT ==== */
+function exportData() {
+  let dataStr = JSON.stringify(wallets, null, 2);
+  let blob = new Blob([dataStr], {type: "application/json"});
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = "solscan_wallets.json";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{document.body.removeChild(a); URL.revokeObjectURL(url);},100);
+}
+
+function importData(event) {
+  let file = event.target.files[0];
+  if(!file) return;
+  let reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let data = JSON.parse(e.target.result);
+      if(Array.isArray(data)) {
+        wallets = data;
+        currentWallet = 0;
+        filterPage = 0;
+        saveData(wallets);
+        renderWalletList();
+        renderMain();
+        alert('Nhập dữ liệu thành công!');
+      } else {
+        alert('File không hợp lệ!');
+      }
+    } catch(err) {
+      alert('File không hợp lệ!');
+    }
+    event.target.value = ""; // reset input
+  };
+  reader.readAsText(file);
+}
+</script>
+</body>
+</html>
