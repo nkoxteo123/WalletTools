@@ -632,16 +632,16 @@ div.appendChild(title);
       renderWalletSets();
     };
     // Copy tất cả ví của mọi bộ
-    document.getElementById('copyAllBtn').onclick = function() {
-      const walletSets = loadWalletSets();
-      let allWallets = [];
-      Object.values(walletSets).forEach(arr => allWallets = allWallets.concat(arr));
-      if(allWallets.length === 0) {
-        alert('Chưa có ví để copy!');
-        return;
-      }
-      navigator.clipboard.writeText(allWallets.join('\n')).then(() => showCopiedAlert());
-    }
+    // document.getElementById('copyAllBtn').onclick = function() {
+    //   const walletSets = loadWalletSets();
+    //   let allWallets = [];
+    //   Object.values(walletSets).forEach(arr => allWallets = allWallets.concat(arr));
+    //   if(allWallets.length === 0) {
+    //     alert('Chưa có ví để copy!');
+    //     return;
+    //   }
+    //   navigator.clipboard.writeText(allWallets.join('\n')).then(() => showCopiedAlert());
+    // }
     // Xuất file JSON
     document.getElementById('exportBtn').onclick = function() {
       const walletSets = loadWalletSets();
@@ -686,68 +686,53 @@ div.appendChild(title);
     };
 
     // Khởi động
-    renderWalletSets();
-document.getElementById('copySelectedBtn').onclick = function () {
-  const checkboxes = document.querySelectorAll('.wallet-checkbox:checked');
-  if (checkboxes.length === 0) {
-    alert('Bạn chưa chọn bộ ví nào để copy!');
-    return;
+   // renderWalletSets();
 
+
+window.onload = function () {
+  renderWalletSets(); // render trước
+
+  const btn = document.getElementById('copySelectedBtn');
+  if (!btn) {
+    console.warn("Không tìm thấy nút #copySelectedBtn");
+    return;
+  }
+
+  btn.onclick = function () {
     console.log("Copy nút được bấm");
 
-  const checkboxes = document.querySelectorAll('.wallet-checkbox:checked');
-  if (checkboxes.length === 0) {
-    alert('Bạn chưa chọn bộ ví nào để copy!');
-    return;
-  }
-
-  const walletSets = loadWalletSets();
-  let selectedWallets = [];
-
-  checkboxes.forEach(cb => {
-    const name = cb.dataset.name;
-    if (walletSets[name]) {
-      selectedWallets = selectedWallets.concat(walletSets[name]);
+    const checkboxes = document.querySelectorAll('.wallet-checkbox:checked');
+    if (checkboxes.length === 0) {
+      alert('Bạn chưa chọn bộ ví nào để copy!');
+      return;
     }
-  });
 
-  if (selectedWallets.length === 0) {
-    alert('Không có ví nào để copy!');
-    return;
-  }
+    const walletSets = loadWalletSets();
+    let selectedWallets = [];
 
-  navigator.clipboard.writeText(selectedWallets.join('\n')).then(() => {
-    console.log("Copy thành công");
-    showCopiedAlert();
-  }).catch(err => {
-    alert('Lỗi khi copy vào clipboard!');
-    console.error(err);
-  });
+    checkboxes.forEach(cb => {
+      const name = cb.dataset.name;
+      if (walletSets[name]) {
+        selectedWallets = selectedWallets.concat(walletSets[name]);
+      }
+    });
 
-  }
-
-  const walletSets = loadWalletSets();
-  let selectedWallets = [];
-
-  checkboxes.forEach(cb => {
-    const name = cb.dataset.name;
-    if (walletSets[name]) {
-      selectedWallets = selectedWallets.concat(walletSets[name]);
+    if (selectedWallets.length === 0) {
+      alert('Không có ví nào để copy!');
+      return;
     }
-  });
 
-  if (selectedWallets.length === 0) {
-    alert('Không có ví nào để copy!');
-    return;
-  }
-
-  navigator.clipboard.writeText(selectedWallets.join('\n')).then(() => {
-    showCopiedAlert();
-  }).catch(err => {
-    alert('Lỗi khi copy vào clipboard!');
-    console.error(err);
-  });
+    navigator.clipboard.writeText(selectedWallets.join('\n')).then(() => {
+      console.log("Copy thành công");
+      showCopiedAlert();
+    }).catch(err => {
+      alert('Lỗi khi copy vào clipboard!');
+      console.error(err);
+    });
+  };
 };
+
+
 
   </script>
 </body>
