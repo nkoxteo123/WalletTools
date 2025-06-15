@@ -402,6 +402,12 @@
     @media (max-width: 470px) {
       .form-btns {flex-direction: column; gap: 9px;}
     }
+    .wallet-title input[type="checkbox"] {
+    accent-color: var(--primary);
+    margin-right: 10px;
+    transform: scale(1.2);
+    cursor: pointer;
+  }
   </style>
 </head>
 <body>
@@ -428,7 +434,7 @@
         </div>
         <div class="form-btns">
           <button class="btn" id="saveBtn">Lưu bộ ví</button>
-          <button class="btn btn-secondary" id="copyAllBtn">Copy tất cả ví</button>
+<button class="btn btn-secondary" id="copySelectedBtn">Copy các bộ được chọn</button>
           <button class="btn btn-secondary" id="exportBtn">Xuất file</button>
           <label for="importFile" style="margin-bottom:0;">
             <input type="file" id="importFile" accept=".json" style="display:none;">
@@ -502,10 +508,24 @@
         div.id = safeId;
         div.style.marginBottom = '18px';
         // Tiêu đề bộ ví
-        const title = document.createElement('div');
-        title.className = 'wallet-title';
-        title.innerHTML = escapeHtml(name) + ` <span style="font-size:1.01rem;color:#4a789a;">(${wallets.length} ví)</span>`;
-        div.appendChild(title);
+       // Tiêu đề bộ ví có checkbox
+const title = document.createElement('div');
+title.className = 'wallet-title';
+
+// Tạo ô checkbox
+const checkbox = document.createElement('input');
+checkbox.type = 'checkbox';
+checkbox.className = 'wallet-checkbox';
+checkbox.dataset.name = name; // gắn tên bộ ví để biết đang chọn bộ nào
+
+// Tạo phần text hiển thị tên bộ ví
+const titleText = document.createElement('span');
+titleText.innerHTML = escapeHtml(name) + ` <span style="font-size:1.01rem;color:#4a789a;">(${wallets.length} ví)</span>`;
+
+// Gắn vào DOM
+title.appendChild(checkbox);
+title.appendChild(titleText);
+div.appendChild(title);
         // Nút copy + edit + xóa
         const actions = document.createElement('div');
         actions.className = 'wallet-actions';
@@ -664,8 +684,71 @@
       };
       reader.readAsText(file);
     };
+
     // Khởi động
     renderWalletSets();
+document.getElementById('copySelectedBtn').onclick = function () {
+  const checkboxes = document.querySelectorAll('.wallet-checkbox:checked');
+  if (checkboxes.length === 0) {
+    alert('Bạn chưa chọn bộ ví nào để copy!');
+    return;
+
+    console.log("Copy nút được bấm");
+
+  const checkboxes = document.querySelectorAll('.wallet-checkbox:checked');
+  if (checkboxes.length === 0) {
+    alert('Bạn chưa chọn bộ ví nào để copy!');
+    return;
+  }
+
+  const walletSets = loadWalletSets();
+  let selectedWallets = [];
+
+  checkboxes.forEach(cb => {
+    const name = cb.dataset.name;
+    if (walletSets[name]) {
+      selectedWallets = selectedWallets.concat(walletSets[name]);
+    }
+  });
+
+  if (selectedWallets.length === 0) {
+    alert('Không có ví nào để copy!');
+    return;
+  }
+
+  navigator.clipboard.writeText(selectedWallets.join('\n')).then(() => {
+    console.log("Copy thành công");
+    showCopiedAlert();
+  }).catch(err => {
+    alert('Lỗi khi copy vào clipboard!');
+    console.error(err);
+  });
+
+  }
+
+  const walletSets = loadWalletSets();
+  let selectedWallets = [];
+
+  checkboxes.forEach(cb => {
+    const name = cb.dataset.name;
+    if (walletSets[name]) {
+      selectedWallets = selectedWallets.concat(walletSets[name]);
+    }
+  });
+
+  if (selectedWallets.length === 0) {
+    alert('Không có ví nào để copy!');
+    return;
+  }
+
+  navigator.clipboard.writeText(selectedWallets.join('\n')).then(() => {
+    showCopiedAlert();
+  }).catch(err => {
+    alert('Lỗi khi copy vào clipboard!');
+    console.error(err);
+  });
+};
+
   </script>
 </body>
 </html>
